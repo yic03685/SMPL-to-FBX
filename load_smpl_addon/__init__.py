@@ -12,6 +12,7 @@ bl_info = {
 import os
 import pickle
 import logging
+import numpy as np
 
 import bpy
 from bpy.props import ( EnumProperty, PointerProperty, StringProperty)
@@ -60,16 +61,17 @@ class OpenSmplPklOperator(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         extension = self.filepath.split(".")[-1]
-        if extension != "pkl":
-            self.report({'ERROR'}, f"File should be a pickle file with .pkl extension, get {extension} from {self.filepath}")
+        if extension != "npz":
+            self.report({'ERROR'}, f"File should be a pickle file with .npz extension, get {extension} from {self.filepath}")
             return {'CANCELLED'}
 
         # Read smpl file
         smpl_params = None
-        with open(self.filepath, "rb") as fp:
-            data = pickle.load(fp)
-            smpl_params = {"smpl_poses":data["smpl_poses"],
-                "smpl_trans":data["smpl_trans"] / (data["smpl_scaling"][0]*1)}
+        data = np.load(self.filepath)
+        translation_z_up = data["smpl_trans"][:, [1, 0, 2]]
+        smpl_params = {"smpl_poses":data["smpl_poses"],
+            "smpl_trans":translation_z_up}
+
 
         logging.info("Read smpl from {}".format(self.filepath))
 
